@@ -23,6 +23,8 @@ void GamePlayDumbAI(void);
 void GamePlaySmartAI(void);
 //The game ends. 
 void GameOver(void); 
+//Print results of gameover
+void PrintResults(void);
 //Reset the Tic Tac Toe board 
 void ResetBoard(void); 
 //Reset flags and status
