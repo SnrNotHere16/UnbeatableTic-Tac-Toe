@@ -103,14 +103,12 @@ void GamePlayDumbAI(){
 			ST7735_FillScreen(0x0);            // set screen to black
 			ST7735_SetCursor(0,0);
 			ST7735_OutString("\n  TIC TAC TOE...\n  Dumb AI\n  Play!\n");
-		  ST7735_OutUDec(g.analogValueR%3);
 			ClearAllLeds();
 			while (!gameStatus.gameOver){
 				LightAnalogLed();
 				LightPlayerLeds();
 				LightBotLeds();
 			}
-			ST7735_OutString("\n  TIC TAC TOE...\n  Smart AI\n  Play SMART!\n");
 }
 void GamePlaySmartAI(){
 			ST7735_FillScreen(0x0);            // set screen to black
@@ -128,18 +126,40 @@ void GamePlaySmartAI(){
 void GameOver(){
 	ST7735_SetCursor(0,0);
   ST7735_FillScreen(0x0);
-	ST7735_OutString("\n  PlayerMove:");
+	PrintResults();
 	ClearAllLeds();
-	while(1);
-// while (1){
-//			In = GPIO_PORTE_DATA_R&0x10; // read PE4 into In
-//    if(In == 0x00){              // PE4 is low
-//				ClearAllLeds();
-//		} else{                      // PE4 is high
-//      LightAllLeds();
-//			}
-// }
+	while(gameStatus.gameOver){
+		if(gameStatus.botWon){
+			LightBotLeds();
+		}
+		else if (gameStatus.playerWon){
+			LightPlayerLeds();
+		}
+		else {
+			LightPlayerLeds();
+			LightBotLeds();
+		}
 	}
+	}
+
+void PrintResults(){
+	if(gameStatus.GamePlayDumbAI)
+		ST7735_OutString("\n  DumbAI MODE");
+	else 
+		ST7735_OutString("\n  SmartAI MODE");
+	if(gameStatus.botWon)
+		ST7735_OutString("\n  BOT WON");
+	else if(gameStatus.playerWon)
+		ST7735_OutString("\n  Player Won");
+	else 
+		ST7735_OutString("\n  Draw");
+	ST7735_OutString("\n  PlayerMoves: ");
+	ST7735_OutUDec(gameStatus.playerMoves);
+	
+	
+
+
+}
 //Reset the Tic Tac Toe board 
 void ResetBoard(){
 	int i; 
@@ -185,11 +205,8 @@ void ResetFlags(){
 //if check(true) check the player
 bool CheckGameOver(bool check){
 	int i; 
-	if (gameStatus.freeTiles == 0){
-		return true;
-	}
 	//Checks the player's tile
-	if (gameStatus.playerMoves > 2 ){
+	if (gameStatus.playerMoves > 1 ){
 		//Check center victory
 			if (gameStatus.centerTile == 1){ //only check if center tile is in Player's hand
 				for (i = 0; i <=3; i++){
@@ -230,6 +247,11 @@ bool CheckGameOver(bool check){
 					return true;
 				}
 			}
+		}
+	
+			if (gameStatus.freeTiles == 0){
+				ST7735_OutString("\nGameEnd");
+				return true;
 		}
 			return false;
 }
@@ -283,32 +305,36 @@ void LightPlayerLeds(){
 void LightBotLeds(){
 	int i;
 	In = GPIO_PORTE_DATA_R&0x10; // read PE4 into In
-			if(gameStatus.playerMoves > 0  && gameStatus.playerMoves != 5){
+			if(gameStatus.playerMoves > 0  ){
 			 	if (In == 0x00)	{			// PE4 is low
 					for (i = 0; i < gameStatus.playerMoves; i++){
-						if(gamePositions.takePositionsB[i] < 4)
-							GPIO_PORTD_DATA_R &= 
+						if (i <= 3){
+						 if(gamePositions.takePositionsB[i] < 4)
+							 GPIO_PORTD_DATA_R &= 
 								~gameLeds.BotLEDS[gamePositions.takePositionsB[i]/3][gamePositions.takePositionsB[i]%3];
-						else if(gamePositions.takePositionsB[i] < 7)
-							GPIO_PORTC_DATA_R &= 
+						 else if(gamePositions.takePositionsB[i] < 7)
+								GPIO_PORTC_DATA_R &= 
 								~gameLeds.BotLEDS[gamePositions.takePositionsB[i]/3][gamePositions.takePositionsB[i]%3];
-						else 
-							GPIO_PORTE_DATA_R &= 
+							else 
+								GPIO_PORTE_DATA_R &= 
 								~gameLeds.BotLEDS[gamePositions.takePositionsB[i]/3][gamePositions.takePositionsB[i]%3];
 					}
 				}
+				}
 				else {
 					for (i = 0; i < gameStatus.playerMoves; i++){
-						if(gamePositions.takePositionsB[i] < 4)
-							GPIO_PORTD_DATA_R |= 
+						if(i <= 3){
+							if(gamePositions.takePositionsB[i] < 4)
+								GPIO_PORTD_DATA_R |= 
 								gameLeds.BotLEDS[gamePositions.takePositionsB[i]/3][gamePositions.takePositionsB[i]%3];
-						else if(gamePositions.takePositionsB[i] < 7)
-							GPIO_PORTC_DATA_R |= 
+							else if(gamePositions.takePositionsB[i] < 7)
+								GPIO_PORTC_DATA_R |= 
 								gameLeds.BotLEDS[gamePositions.takePositionsB[i]/3][gamePositions.takePositionsB[i]%3];
-						else 
-							GPIO_PORTE_DATA_R |= 
+							else 
+								GPIO_PORTE_DATA_R |= 
 								gameLeds.BotLEDS[gamePositions.takePositionsB[i]/3][gamePositions.takePositionsB[i]%3];
 					}	
+				}
 			}
 		}
 }
@@ -514,7 +540,7 @@ bool AvailableWin(){
 				if (gamePositions.winMod[i] == 8){
 					if (i == 0 && (AddPositionBotSmart(0) || AddPositionBotSmart(3) || AddPositionBotSmart(6)))
 						return true;
-					if (i == 0 && (AddPositionBotSmart(2) || AddPositionBotSmart(5) || AddPositionBotSmart(8)))
+					if (i == 1 && (AddPositionBotSmart(2) || AddPositionBotSmart(5) || AddPositionBotSmart(8)))
 						return true;
 				}
 	}
@@ -526,7 +552,6 @@ bool AvailableBlock(){
 		if (gameStatus.centerTile == 1) {
 				for (i = 0; i <=3; i++){
 					if (gamePositions.winCenter[i] == 6 && (AddPositionBotSmart(8-i) || AddPositionBotSmart(i%4))){
-						ST7735_OutString("\nWIN");
 						return true; 
 					}
 		}
@@ -543,7 +568,7 @@ bool AvailableBlock(){
 				if (gamePositions.winMod[i] == 6){
 					if (i == 0 && (AddPositionBotSmart(0) || AddPositionBotSmart(3) || AddPositionBotSmart(6)))
 						return true;
-					if (i == 0 && (AddPositionBotSmart(2) || AddPositionBotSmart(5) || AddPositionBotSmart(8)))
+					if (i == 1 && (AddPositionBotSmart(2) || AddPositionBotSmart(5) || AddPositionBotSmart(8)))
 						return true;
 				}
 	}
@@ -640,11 +665,15 @@ void GPIOPortF_Handler(){
 			GPIO_PORTF_ICR_R = 0x01;  // acknowledge flag0
 			GPIO_PORTF_DATA_R = 0x04;
 			gameStatus.GamePlaySmartAI = true;
+			if(gameStatus.gameOver)
+				gameStatus.gameOver = false;
 		}
 		else if ((GPIO_PORTF_RIS_R&0x10) == 0x10 ) {  // detects if switch 1 is pressed
 			GPIO_PORTF_ICR_R = 0x10;  // acknowledge flag0
 			GPIO_PORTF_DATA_R = 0x08;
 			gameStatus.GamePlayDumbAI = true;
+				if(gameStatus.gameOver)
+				gameStatus.gameOver = false;
 		}
 								 
 }
@@ -658,7 +687,7 @@ uint32_t Adirection[2];
 		Adirection[0] = ADC1_SSFIFO2_R&0xFFF;  // read second result, y direction read.
 		Adirection[1] = ADC1_SSFIFO2_R&0xFFF;  // read first result, x direction read. 
 			if((gameStatus.GamePlayDumbAI == true || gameStatus.GamePlaySmartAI == true) && !gameStatus.gameOver){
-			 if (Adirection[1] >= 4085){
+			 if (Adirection[1] >= 3700){
 				GPIO_PORTF_DATA_R = 0x08;
 				GPIO_PORTB_DATA_R &= ~gameLeds.PlayerLEDS[g.analogValueR][g.analogValueC];
 				g.analogValueC += 1;
@@ -677,14 +706,14 @@ uint32_t Adirection[2];
 				GPIO_PORTA_DATA_R &= ~0x10;
 			}
 			
-			if (Adirection[0] >= 4085){
+			if (Adirection[0] >= 3000){
 				GPIO_PORTF_DATA_R = 0x08;
 				GPIO_PORTB_DATA_R &= ~gameLeds.PlayerLEDS[g.analogValueR][g.analogValueC];
 				g.analogValueR += 2;
 				g.analogValueR %= 3;
 				DelayWait10ms(100);
 			}
-			else if (Adirection[0] <= 400){
+			else if (Adirection[0] <= 1200){
 				GPIO_PORTF_DATA_R = 0x08;
 				GPIO_PORTB_DATA_R &= ~gameLeds.PlayerLEDS[g.analogValueR][g.analogValueC];
 				g.analogValueR+=1;
@@ -708,7 +737,8 @@ void GPIOPortE_Handler(){
 			if ((gameStatus.GamePlayDumbAI  || gameStatus.GamePlaySmartAI) && !gameStatus.gameOver){
 				if(AddPosition(((3*g.analogValueR)+g.analogValueC))){
 				gameStatus.gameOver = CheckGameOver(true);
-					if(!gameStatus.gameOver) { 
+					DelayWait10ms(700);		
+					if(!gameStatus.gameOver ) { 
 						if (gameStatus.GamePlayDumbAI)
 							AddPositionBotAuto();
 						else 
@@ -722,8 +752,9 @@ void GPIOPortE_Handler(){
 				}
 				
 			}
+
 			
 
 		}
-					DelayWait10ms(500);			 
+					DelayWait10ms(300);			 
 }
