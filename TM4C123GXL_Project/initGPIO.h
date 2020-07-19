@@ -1,7 +1,7 @@
 /* 
 Declarations for the GPIO pins functions for the Tic Tac Toe game which includes 
 	1. 18 outputs  (LED) (PB0-PB7, PA4 (R1-R9)), (PD2-PD3, PD6-PD7,  PC5-PC7, PE0,PE3(R1-R9)))
-	2. 3 inputs (Buttons) (PF0,PF4)
+	2. 3 inputs (Buttons) (PF0,PF4, PE5)
 	3. 2 inputs (ADC) (PE1-PE2)
 	4. 2 outputs (PWM) (PC4,PE4)
 */ 
